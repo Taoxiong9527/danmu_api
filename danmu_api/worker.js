@@ -32,8 +32,185 @@ async function handleRequest(req, env, deployPlatform, clientIp) {
     await getRedisCaches();
   }
 
-  function handleHomepage() {
+  function handleHomepage(req) {
     log("info", "Accessed homepage with repository information");
+    
+    // Check if the request accepts HTML (browser request)
+    const acceptHeader = req.headers.get('accept') || '';
+    const wantsHtml = acceptHeader.includes('text/html');
+    
+    // Return HTML for browsers, JSON for API clients
+    if (wantsHtml) {
+      const htmlContent = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LogVar 弹幕 API 服务器</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 40px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        .header .version {
+            color: #888;
+            font-size: 0.9rem;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .section h2 {
+            color: #444;
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            padding-left: 10px;
+            border-left: 4px solid #667eea;
+        }
+        .section p {
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.8;
+        }
+        .info-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .info-box pre {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 0.85rem;
+        }
+        .links {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        .links a {
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            transition: background 0.3s;
+        }
+        .links a:hover {
+            background: #5568d3;
+        }
+        .notice {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        .env-info {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 10px;
+        }
+        .env-info strong {
+            color: #444;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 LogVar 弹幕 API 服务器</h1>
+            <p class="version">Version ${globals.VERSION}</p>
+        </div>
+
+        <div class="section">
+            <h2>📖 项目介绍</h2>
+            <p>一个人人都能部署的基于 js 的弹幕 API 服务器，支持爱优腾芒哔人韩巴弹幕直接获取，兼容弹弹play的搜索、详情查询和弹幕获取接口规范，并提供日志记录，支持vercel/netlify/edgeone/cloudflare/docker/claw等部署方式，不用提前下载弹幕，没有nas或小鸡也能一键部署。</p>
+        </div>
+
+        <div class="section">
+            <h2>⚡ API 端点</h2>
+            <div class="info-box">
+                <pre>GET  /api/v2/search/anime?keyword=关键词
+GET  /api/v2/search/episodes?anime=关键词
+POST /api/v2/match
+GET  /api/v2/bangumi/:animeId
+GET  /api/v2/comment/:commentId?format=json
+GET  /api/v2/comment?url=视频URL&format=json
+GET  /api/logs</pre>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🔧 系统状态</h2>
+            <div class="info-box">
+                <div class="env-info">
+                    <strong>本地缓存:</strong> ${globals.localCacheValid ? '✅ 已启用' : '❌ 未启用'}<br>
+                    <strong>Redis缓存:</strong> ${globals.redisValid ? '✅ 已连接' : '❌ 未连接'}<br>
+                    <strong>环境变量:</strong> ${Object.keys(globals.accessedEnvVars).length} 个已配置
+                </div>
+            </div>
+        </div>
+
+        <div class="notice">
+            <strong>⚠️ 注意事项</strong><br>
+            本项目仅为个人爱好开发，代码开源。如有任何侵权行为，请联系本人删除。有问题提issue或私信机器人都ok。
+        </div>
+
+        <div class="section">
+            <h2>🔗 相关链接</h2>
+            <div class="links">
+                <a href="https://github.com/huangxd-/danmu_api" target="_blank">📦 GitHub 仓库</a>
+                <a href="https://t.me/ddjdd_bot" target="_blank">🤖 Telegram 机器人</a>
+                <a href="https://t.me/logvar_danmu_group" target="_blank">👥 互助群组</a>
+                <a href="https://t.me/logvar_danmu_channel" target="_blank">📢 更新频道</a>
+            </div>
+        </div>
+    </div>
+    <script type="module">
+        import { inject } from 'https://cdn.jsdelivr.net/npm/@vercel/analytics@1.6.1/dist/index.mjs';
+        inject({ mode: 'auto', debug: false });
+    </script>
+</body>
+</html>`;
+      
+      return new Response(htmlContent, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Access-Control-Allow-Origin': '*'
+        }
+      });
+    }
+    
+    // Return JSON for API clients
     return jsonResponse({
       message: "Welcome to the LogVar Danmu API server",
       version: globals.VERSION,
@@ -50,7 +227,7 @@ async function handleRequest(req, env, deployPlatform, clientIp) {
 
   // GET /
   if (path === "/" && method === "GET") {
-    return handleHomepage();
+    return handleHomepage(req);
   }
 
   if (path === "/favicon.ico" || path === "/robots.txt" || method === "OPTIONS") {
@@ -139,7 +316,7 @@ async function handleRequest(req, env, deployPlatform, clientIp) {
   
   // GET /
   if (path === "/" && method === "GET") {
-    return handleHomepage();
+    return handleHomepage(req);
   }
 
   // GET /api/v2/search/anime
